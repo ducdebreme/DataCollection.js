@@ -440,6 +440,45 @@
 
   };
 
+DataCollectionQuery.prototype.groupBy = function(field) {
+
+    this.__validate__();
+
+    var data = this._data.slice();
+    var i, pos, val, datum;
+    var len = data.length;
+
+    var n = 0;
+    var tmp = Array(len);
+    var idx = {};  // maps from grouping value to position in Array
+
+    for(i = 0; i !== len; i++) {
+
+      datum = data[i];
+      val = datum[field];
+
+      if( val in idx) {
+        // append to existing group
+        pos = idx[val];
+        tmp[pos].records.push(datum);
+      } else {
+        // create a new group
+        pos = n++;
+        tmp[pos] = {};
+        tmp[pos]['records'] = [];
+        tmp[pos][field] = val;
+        idx[val] = pos;
+        tmp[pos].records.push(datum);
+      }
+    }
+
+    tmp = tmp.slice(0, n);
+
+    return new DataCollectionQuery(this.__parent, tmp);
+
+  };
+
+
   DataCollectionQuery.prototype.filter = function(filters) {
     var filterArray = [].slice.call(arguments);
     return this.__filter(filterArray, false);
@@ -582,6 +621,21 @@
     return new DataCollectionQuery(this.__parent, tmp);
 
   };
+
+  DataCollectionQuery.prototype.orderByFunc = function(sortFn) {
+
+    this.__validate__();
+
+    try {
+      var tmp = this._data.slice().sort(sortFn);
+    } catch(e) {
+      throw new Error('Key ' + originalKey + ' could not be sorted by');
+    }
+
+    return new DataCollectionQuery(this.__parent, tmp);
+
+  };
+
 
   DataCollectionQuery.prototype.sort = DataCollectionQuery.prototype.order;
 
